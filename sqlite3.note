@@ -1,0 +1,64 @@
+sqlite3>
+  two primary objects of sqlite3 :
+    sqlite3  ->  the database connection object,created by sqlite3_open(),
+    	     	 and destroyed by sqlite3_close().
+
+    sqlite3_stmt  ->  the prepared statement object,created by sqlite3_prepare(),
+    		      and destroyed by sqlite3_finalize().
+
+  eight primary methods of sqlite3 :
+    /*  sqlite3_open - open an SQLite database file with UTF-8.
+     *  @filename : sqlite3 database filename with full path or relative path.
+     *  @ppDb : the pointer points to a pointer which points to a sqlite3 object.
+     *  return - SQLITE_OK or error code.
+     *  #  this function will automatically allocate memory for *ppDb,if failed to
+     	   allocating,then NULL will be written into it.
+     */
+    int sqlite3_open(const char *filename, sqlite3 **ppDb);
+
+    /*  sqlite3_open16 - UTF-16 version.  */
+    int sqlite3_open16(const void *filename, sqlite3 **ppDb);
+
+    /*  sqlite3_open_v2 - works like sqlite3_open() except that it accepts two
+     *                    additional parameters for additonal control over the
+     *                    new database connection.(UTF-8)
+     *  @filename : file name.
+     *  @ppDb : pointer of pointer points to sqlite3.
+     *  @flags : at least one of the following flags must be included >
+     *             SQLITE_OPEN_READONLY
+     *             SQLITE_OPEN_READWRITE
+     *		   SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+     *		   SQLITE_OPEN_URI	 /*  the filename can be interpreted as a URI  */
+     *		   SQLITE_OPEN_MEMORY	 /*  database will be opened as an in-memory database  */
+     *		   			 /*  it is named by @filename,used for cache-sharing  */
+     *		   SQLITE_OPEN_NOMUTEX
+     *		   SQLITE_OPEN_FULLMUTEX
+     *		   SQLITE_OPEN_SHAREDCACHE
+     *		   SQLITE_OPEN_PRIVATECACHE	/*  shared cache disabled  */
+     *		   SQLITE_OPEN_EXRESCODE	/*  extended result code mode  */
+     *		   SQLITE_OPEN_NOFOLLOW		/*  @filename is not allowed to contain a symbolic link  */
+     *  @zVfs : the name of the sqlite3_vfs object that defines the operating
+     *	      	system interface that the new database connection should use.
+     *  return - SQLITE_OK or error code.
+     *  #  SQLITE_OPEN_EXCLUSIVE flag does not cause the open to fail if the 
+     *	   databse already exists,it is intended for use by the VFS interface only.
+     *  #  if @flags is not a optionally combining from above,the behavior is undefined.
+     */
+    int sqlite3_open_v2(const char *filename, sqlite3 **ppDb,
+    			int flags, const char *zVfs);
+
+    /*  sqlite3_close - close a database connection and destroy it.
+     *  @db : pointer returned by sqlite3_open() or sqlite3_open16().
+     *  return - SQLITE_OK or error code.
+     *  #  if the database connection is associated with unfinalized prepared statements,
+     	   BLOB handlers,and/or unfinished sqlite3_backup objects then sqlite3_close() will leave the database connection open and return SQLITE_BUSY.
+     */
+    int sqlite3_close(sqlite3 *db);
+
+    /*  sqlite3_close_v2 - for close and destroy a connection opened by sqlite3_open_v2().  */
+    int sqlite3_close_v2(sqlite3 *db);
+
+    !  if an sqlite3 object is destroyed while a transaction is open,the transaction
+       is automatically rolled back.
+    !  @db can not previously closed,call close functions with NULL is a harmless no-op.
+
