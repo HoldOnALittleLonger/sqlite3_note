@@ -3,8 +3,32 @@ sqlite3>
     sqlite3  ->  the database connection object,created by sqlite3_open(),
     	     	 and destroyed by sqlite3_close().
 
+		 typedef struct sqlite3 sqlite3;
+
+		 each open SQLite database is represented by a pointer to an
+		 instance of the opaque structure named "sqlite3".
+
+		 constructors :
+		   sqlite3_open(), sqlite3_open16(), sqlite3_open_v2()
+
+		 destructors :
+		   sqlite3_close(), sqlite3_close_v2()
+
     sqlite3_stmt  ->  the prepared statement object,created by sqlite3_prepare(),
     		      and destroyed by sqlite3_finalize().
+
+		      typedef struct sqlite3_stmt sqlite3_stmt;
+
+		      an instance of this object represents a single SQL statement
+		      that has been compiled into binary form and is ready to be
+		      evaluated.
+
+		      constructors :
+		        sqlite3_prepare(), sqlite3_prepare16(), sqlite3_prepare16_v2()
+			sqlite3_prepare16_v3(), sqlite3_prepare_v2(), sqlite3_prepare_v3()
+			
+		      destructor :
+		        sqlite3_finalize()
 
   eight primary methods of sqlite3 :
     /*  sqlite3_open - open an SQLite database file with UTF-8.
@@ -61,4 +85,72 @@ sqlite3>
     !  if an sqlite3 object is destroyed while a transaction is open,the transaction
        is automatically rolled back.
     !  @db can not previously closed,call close functions with NULL is a harmless no-op.
+
+
+
+    /*  sqlite3_prepare - routine used for convert SQL statement in UTF-8 to byte-code program.
+     *  @db : database instance.
+     *  @zSql : the SQL statement to be compiled.
+     *  @nByte : read up indicator,@nByte < 0,the first '\0' as end;
+     *                             @nByte > 0,the maximum number of characters
+     *                             to be readed.
+     *  @ppStmt : *ppStmt points to the compiled SQL statement.
+     *  @pzTail : if @pzTail is not NULL,then *pzTail will points to the first
+     *            byte past the end of the first SQL statement in @zSql.
+     *            *pzTail is left pointing to what remains uncompiled.
+     *  return - SQLITE_OK or error code.
+     */
+    int sqlite3_prepare(sqlite3 *db, const char *zSql, int nByte,
+    		        sqlite3_stmt **ppStmt, const char **pzTail);
+
+    /*  sqlite3_prepare_v2 - version 2,recommended for all new programs.  */
+    int sqlite3_prepare_v2(sqlite3 *db, const char *zSql, int nByte,
+    			   sqlite3_stmt **ppStmt, const char **pzTail);
+
+    /*  sqlite3_prepare_v3 - version 3.
+     *  @prepFlags : a bit array consisting of zero or more of the SQLITE_PREPARE_* flags.
+     *               if @preFlags is zero,then this function is same to *_v2 functions.
+     */
+    int sqlite3_prepare_v3(sqlite3 *db, const char *zSql, int nByte,
+    			   unsigned int prepFlags, sqlite3_stmt **ppStmt,
+			   const char **pzTail);
+
+    /*  In the "vX" interfaces,the prepared statement that is returned contains a
+        copy of the original SQL text,this causes the sqlite3_setp() interface to behave
+	differently in 3 ways :
+	  >  if the database schema changes,instead of returning SQLITE_SCHEMA
+	     as it always used to do,sqlite3_setp() will automatically recompile
+	     the SQL statement and try to run it again.
+	     as many as SQLITE_MAX_SCHEMA_RETRY retries will occur before sqlite3_step()
+	     gives up and returns an error.
+	  >  when an error occurs,sqlite3_step() will return one of the detailed
+	     error codes or extended error codes.
+	     the legacy behavior was that sqlite3_step() would only return a generic
+	     SQLITE_ERROR result code and the application would have to make a 
+	     second call to sqlite3_reset() in order to find the underlying cause
+	     of the problem.with the "v2" prepare interfaces,the underlying reason
+	     for the error is returned immediately.
+	  >  if the specific value bound to a host parameter in the WHERE clause
+	     might influence the choice of query plan for a statement,then the statement
+	     will be automatically recompiled,as if there had been a schema change,
+	     on the first sqlite3_setp() call following any change to the bindings
+	     of that parameter.the specific value of a WHERE-clause parameter might
+	     influence the choice of query plan if the parameter is the left-hand
+	     side of a LIKE or GLOB operator or if the parameter is compared to
+	     an indexed column and the SQLITE_ENABLE_STAT4 compile-time option
+	     is enabled.
+    */
+
+    /*  UTF-16 version  */
+    int sqlite3_prepare16(sqlite3 *db, const void *zSql, int nByte,
+    		          sqlite3_stmt **ppStmt, const void **pzTail);
+    
+    /*  UTF-16 version  */
+    int sqlite3_prepare16_v2(sqlite3 *db, const void *zSql, int nByte,
+    			     sqlite3_stmt **ppStmt, const void **pzTail);
+
+    /*  UTF-16 version  */
+    int sqlite3_prepare16_v3(sqlite3 *db, const void *zSql, int nByte,
+    		             unsigned int prepFlags, sqlite3_stmt **ppStmt,
+			     const void **pzTail);
 
