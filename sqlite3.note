@@ -86,7 +86,7 @@ sqlite3>
        is automatically rolled back.
     !  @db can not previously closed,call close functions with NULL is a harmless no-op.
 
-
+  Compiling An SQL Statement>
 
     /*  sqlite3_prepare - routine used for convert SQL statement in UTF-8 to byte-code program.
      *  @db : database instance.
@@ -153,4 +153,118 @@ sqlite3>
     int sqlite3_prepare16_v3(sqlite3 *db, const void *zSql, int nByte,
     		             unsigned int prepFlags, sqlite3_stmt **ppStmt,
 			     const void **pzTail);
+
+  Binding Values To Prepared Statements>
+    int sqlite3_bind_blob(sqlite3_stmt *, int, const void *, int n,
+    			  void (*)(void *));
+    int sqlite3_bind_blob64(sqlite3_stmt *, int, const void *, sqlite3_unit64,
+    			    void (*)(void *));
+
+    int sqlite3_bind_double(sqlite3_stmt *, int, double);
+    
+    int sqlite3_bind_int(sqlite3_stmt *, int, int);
+
+    int sqlite3_bind_int64(sqlite3_stmt *, int, sqlite3_int64);
+
+    int sqlite3_bind_null(sqlite3_stmt *, int);
+
+    int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int,
+    			  void (*)(void *));
+
+    int sqlite3_bind_text16(sqlite3_stmt *, int, const void *, int,
+    			    void (*)(void *));
+    int sqlite3_bind_text64(sqlite3_stmt *, int, const char *, sqlite3_uint64,
+    	                    void (*)(void *), unsigned char encoding);
+
+    int sqlite3_bind_value(sqlite3_stmt *, int, const sqlite3_value *);
+
+    int sqlite3_bind_pointer(sqlite3_stmt *, int, void *, const char *,
+    	                     void (*)(void*));
+
+    int sqlite3_bind_zeroblob(sqlite3_stmt *, int, int n);
+    int sqlite3_bind_zeroblob64(sqlite3_stmt *, int, sqlite3_uint64);
+
+    #  in the SQL statement text input to sqlite3_prepare_v2() and its variants,
+       literals may be replaced by a parameter that matches one of following templates :
+         (literal templates)
+         ?
+	 ?NNN	/*  NNN represents an integer literal  */
+	 :VVV	/*  VVV represents an alphanumeric identifier  */
+	 @VVV
+	 $VVV
+
+       the values of these parameters can be set using the sqlite3_bind_*() routines.
+
+       e.g.
+         INSERT INTO TABLE_NAME (field1, field2) VALUES(?1, ?2)
+	 this statment have to be prepared by sqlite3_prepare_*() as first before 
+	 parameter binding.
+
+    1st-arg :
+      always a pointer to the sqlite3_stmt object returned from sqlite3_prepare_v2() or
+      its variants.
+
+    2nd-arg :
+      the index of the SQL parameter to be set.the leftmost SQL parameter has
+      an index of 1,when the same named SQL parameter is used more than once,
+      second and subsequent occurrences have the same index as the first occurrence.
+      the index for named parameters can be looked up using the sqlite3_bind_parameter_index() API.
+      the index for "?NNN" parameters is the value of NNN,the NNN value must be
+      between 1 and the sqlite3_limit() parameter SQLITE_LIMIT_VARIABLE_NUMBER.
+
+    3rd-arg :
+      the value to bind to the parameter,NULL pointer the fourth parameter is ignored,
+      and the end result is the same as sqlite3_bind_null().
+
+    4th-arg :
+      its value is the number of bytes in the parameter,in other words,
+      the value is the number of bytes in the value,not the number of characters.(do not contain '\0')
+      if it is negative to sqlite3_bind_text() or sqlite3_bind_text16(),then the
+      length of the string is the number of bytes up to the first zero terminator.
+      if it is negative to sqlite3_bind_blob().then the behavior is undefined.
+      if any NUL characters occurs at byte offsets less than the value of the 4th
+      parameter then the resulting string value will contain embedded NULs.
+      the result of expressions involving strings with embedded NULs is undefined.
+
+    5th-arg :
+      5th-arg to the BLOB and string binding interfaces constrols or indicates the
+      lifetime of the object referenced by the 3rd parameter.
+      three options exist :
+        1>  A destructor to dispose of the BLOB or string after SQLite has finished
+	    with it may be passed.(bind API fails,still call to destructor)
+	    (if 3rd-arg is NULL,destructor would not be called)
+	2>  the special constant SQLITE_STATIC,may be passed to indicate that the
+	    application remains resonsible for disposing of the object.
+	3>  the constant SQLITE_TRANSIENT,may be passed to indicate that the object
+	    is to be copied prior to the return from sqlite3_bind_*().
+	    SQLite will then manage the lifetime of its private copy.
+
+    6th-arg :
+      6th-arg to sqlite3_bind_text64() must be one of SQLITE_UTF8,SQLITE_UTF16,
+      SQLITE_UTF16BE,SQLITE_UTF16LE to specify the encoding of the text in the
+      3rd parameter.
+      if 6th-arg != @these_values or if the text encoding is different from
+      the encoding specified by the 6th parameter,then the behavior is undefined.
+
+    sqlite3_bind_zeroblob() binds a BLOB of length N that is filled with zeros.
+
+    sqlite3_bind_pointer(S,I,P,T,D) causes the @I-th parameter in prepared statement
+    @S to have an SQL value of NULL,but to also be associated with the pointer @P of type @T,
+    @D is either a NULL pointer or a pointer to a destructor for @P.
+
+    !  if @prepared_statement is NULL or it is a prepared statement for which
+       sqlite3_step() has been called more recently than sqlite3_reset(),then the
+       call will return SQLITE_MISUSE.
+       if @prepared_statement has been finalized,the result is undefined and
+       probably harmful.
+    !  bindings are not cleared by the sqlite3_reset().unbound parameters are 
+       interpreted as NULL.
+       sqlite3_clear_bindings()API will cleared bindings.
+
+    #  the byte-order of UTF16 input text is determined by the byte-order mark(BOM,U+FEFF).
+       if the mark is uncorrect or missed,SQLite might change those invalid characters into
+       the unicode replacement character: U+FFFD.
+      
+
+    
 
