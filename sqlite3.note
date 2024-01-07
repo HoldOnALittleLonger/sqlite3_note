@@ -86,7 +86,7 @@ sqlite3>
        is automatically rolled back.
     !  @db can not previously closed,call close functions with NULL is a harmless no-op.
 
-  Compiling An SQL Statement>
+    Compiling An SQL Statement>
 
     /*  sqlite3_prepare - routine used for convert SQL statement in UTF-8 to byte-code program.
      *  @db : database instance.
@@ -154,7 +154,8 @@ sqlite3>
     		             unsigned int prepFlags, sqlite3_stmt **ppStmt,
 			     const void **pzTail);
 
-  Binding Values To Prepared Statements>
+    Binding Values To Prepared Statements>
+
     int sqlite3_bind_blob(sqlite3_stmt *, int, const void *, int n,
     			  void (*)(void *));
     int sqlite3_bind_blob64(sqlite3_stmt *, int, const void *, sqlite3_unit64,
@@ -265,6 +266,84 @@ sqlite3>
        if the mark is uncorrect or missed,SQLite might change those invalid characters into
        the unicode replacement character: U+FFFD.
       
+    Evaluate An SQL Statement>
 
-    
+    /*  sqlite3_step - evaluate an SQL statement.
+     *  first-arg : the SQL statement pointer which is returned by PrePare functions.
+     *  return - SQLITE_DONE or SQLITE_ROW or error code.
+     *           #  "sqlite3_prepare_vX" interfaces will let this function
+     *              returns other result codes or extended result codes.
+     *  #  of course,if the SQL statement have to be bound some parameters,
+     *     must call sqlite3_bind_*() before evaluate an SQL statement.
+     */
+    int sqlite3_step(sqlite3_stmt *);
 
+    --
+
+    Destroy A Prepared Statement Object>
+
+    /*  sqlite3_finalize - delete a prepared statement.
+     *  @pStmt : the prepared statement.
+     *  return - SQLITE_OR or error code.
+     *  #  if the most recent evaluation of the statement encountered no errors
+     *     or if the statement is never been evaluated,SQLITE_OK will be returned.
+     */
+    int sqlite3_finalize(sqlite3_stmt *pStmt);
+
+    !  this routine can be called at any point during the life cycle of prepared
+       statement :
+         before statement @S is ever evaluated,
+	 after one or more calls to sqlite3_reset(),
+	 or after any call to sqlite3_step() regardless of whether or not
+	 the statement has completed execution.
+
+       sqlite3_finalize(NULL) => no-op
+
+    !  the application must finalize every prepared statement in order to avoid
+       resource leaks.
+       DO NOT USE A PREPARE STATEMENT AFTER IT HAS BEEN FINALIZED ! 
+
+    One-Step Query Execution Interface>
+
+    /*  sqlite3_exec - execute SQL statement one-step.
+     *  first-arg : an open database.
+     *  @sql : SQL to be evaluated.(UTF-8,semicolon-separate)
+     *  @callback : callback function.
+     *  fourth-arg : the first argument for @callback.
+     *  @errmsg : where the error msg to be written.
+     */
+    int sqlite3_exec(sqlite3 *, const char *sql,
+    	             int (*callback)(void *, int, char **, char**),
+		     void *,
+		     char **errmsg);
+
+    !  it is a convenience wrapper around sqlite3_prepare_v2(), sqlite3_step(),
+       sqlite3_finalize(),that allows an application to run multiple statements
+       of SQL without having to use a lot of C code.
+       /*  there is no any sqlite3_bind_*() was called.  */
+
+    !  if @callback is not NULL,then it is invoked for each result row coming
+       out of the evaluated SQL statements.
+       if @callback == NULL,then no callback function will be invoked,and all
+       result rows are ignored.
+       if @callback returns non-zero,the sqlite3_exec() routine returns 
+       SQLITE_ABORT without invoking the callback again and without running any
+       subsequent SQL statements.
+       @second-arg to @callback :
+         the number of columns in the result.
+       @third-arg to @callback :
+         an array of pointers to strings obtained as if from sqlite3_column_text(),
+	 one for each column.
+       @fourth-arg to @callback :
+         an arry of pointers to strings where each entry represents the name of
+	 corresponding result column as obtained from sqlite3_column_name().
+
+    !  any error was occured during evaluating,then SQL statement evaluating 
+       stop,and remaind statements will be skipped.
+       error message will be written into @errmsg;if no error occurs and
+       @errmsg != NULL,then sqlite3_exec() sets @errmsg = NULL before returing.
+
+    !  during sqlite3_exec() running :
+         database handle must be valid and opened.
+	 @sql can not be modified or deallocated(if its granted by dynamically allocating).
+	 
