@@ -84,7 +84,9 @@ sqlite3>
 
     !  if an sqlite3 object is destroyed while a transaction is open,the transaction
        is automatically rolled back.
+
     !  @db can not previously closed,call close functions with NULL is a harmless no-op.
+
 
     Compiling An SQL Statement>
 
@@ -153,6 +155,7 @@ sqlite3>
     int sqlite3_prepare16_v3(sqlite3 *db, const void *zSql, int nByte,
     		             unsigned int prepFlags, sqlite3_stmt **ppStmt,
 			     const void **pzTail);
+
 
     Binding Values To Prepared Statements>
 
@@ -258,6 +261,7 @@ sqlite3>
        call will return SQLITE_MISUSE.
        if @prepared_statement has been finalized,the result is undefined and
        probably harmful.
+
     !  bindings are not cleared by the sqlite3_reset().unbound parameters are 
        interpreted as NULL.
        sqlite3_clear_bindings()API will cleared bindings.
@@ -265,6 +269,7 @@ sqlite3>
     #  the byte-order of UTF16 input text is determined by the byte-order mark(BOM,U+FEFF).
        if the mark is uncorrect or missed,SQLite might change those invalid characters into
        the unicode replacement character: U+FFFD.
+
       
     Evaluate An SQL Statement>
 
@@ -278,7 +283,78 @@ sqlite3>
      */
     int sqlite3_step(sqlite3_stmt *);
 
-    --
+
+    Result Values From A Query>
+    
+    /*  sqlite3_column_blob - BLOB result.  */
+    const void *sqlite3_column_blob(sqlite3_stmt *, int iCol);
+
+    /*  sqlite3_column_double - REAL result.  */
+    double sqlite3_column_double(sqlite3_stmt *, int iCol);
+
+    /*  sqlite3_column_int - 32-bit INTEGER result.  */
+    int sqlite3_column_int(sqlite3_stmt *, int iCol);
+
+    /*  sqlite3_column_int64 - 64-bit INTEGER result.  */
+    sqlite3_int64 sqlite3_column_int64(sqlite3_stmt *, int iCol);
+
+    /*  sqlite3_column_text - UTF-8 TEXT result.  */
+    const unsigned char *sqlite3_column_text(sqlite3_stmt *, int iCol);
+
+    /*  sqlite3_column_text16 - UTF-16 TEXT result.  */
+    const void *sqlite3_column_text16(sqlite3_stmt *, int iCol);
+
+    /*  sqlite3_column_value - the result as an unprotected sqlite3_value.  */
+    sqlite3_value *sqlite3_column_value(sqlite3_stmt *, int iCol);
+
+    /*  sqlite3_column_bytes - Size of a BLOB or a UTF-8 TEXT result in bytes.  */
+    int sqlite3_column_bytes(sqlite3_stmt *, int iCol);
+
+    /*  sqlite3_column_bytes16 - Size of UTF-16 TEXT in bytes.  */
+    int sqlite3_column_bytes16(sqlite3_stmt *, int iCol);
+
+    /*  sqlite3_column_type - Default datatype of the result.  */
+    int sqlite3_column_type(sqlite3_stmt *, int iCol);
+
+    @first-arg :
+      a pointer to the prepared statement that is being evaluated.
+
+    @second-arg :
+      the index of the column for which information should be returned.
+      the leftmost column of the result set has the index 0.
+      the number of columns in the result can be determined using
+      sqlite3_column_count() API.
+
+    !  @1st is not a valid row or column index is out of range,behavior is
+       undefined.
+
+    !  these routines may only be called when the most recent call to sqlite3_step()
+       has returned SQLITE_ROW and neither sqlite3_reset() nor sqlite3_finalize()
+       have been called subsequently.Otherwise,behavior is undefined(even different threads)
+
+    !  _blob, _double, _int, _int64, _text, _text16 followed functions each return
+       the value of a result column in a specific data format,automatically type
+       conversion may happens be there if the result column is not initially in
+       the requested format.
+
+    !  _type followed function may returns SQLITE_INTEGER, SQLITE_FLOAT, SQLITE_TEXT,
+       SQLITE_BLOB, SQLITE_NULL.
+
+    !  _bytes followed function is called on UTF-16 text,then routine will automatically
+       converts UTF-16 to UTF-8 and then counts its size in byte.
+
+    !  _text, _text16 followed functions,even empty string,always zero-terminated.
+       but the return value from sqlite3_column_blob() for a zero-length BLOB is
+       a NULL pointer.
+    
+    !  strings returned by sqlite3_column_text16() always have the endianness which
+       is native to the platform,regardless of the text encoding set for the database.
+
+    !  the pointers returned are valid until a type conversion occurs,or until
+       sqlite3_step() or sqlite3_reset() or sqlite3_finalize() is called,the
+       memory space used to hold strings and BLOBs is freed automatically.
+       DO NOT pas the pointers returned from sqlite3_column_blob(), sqlite3_column_text(), etc. into sqlite3_free().
+
 
     Destroy A Prepared Statement Object>
 
