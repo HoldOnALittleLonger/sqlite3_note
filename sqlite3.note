@@ -283,6 +283,19 @@ sqlite3>
      */
     int sqlite3_step(sqlite3_stmt *);
 
+    !  SQLITE_BUSY means that the database engine was unable to acquire the 
+       database locks it need to do its job.
+
+    !  SQLITE_DOEN means that the statement has finished executing successfully.
+       sqlite3_step() should not be called again on this virtual machine without
+       first calling sqlite3_reset() to reset the virtual machine back to its
+       initial state.
+
+    !  if the SQL statement being executed returns any data,then SQLITE_ROW is
+       returned each time a new row of data is ready for processing by the caller.
+       the values may be accessed using the column access functions.
+       sqlite3_step() is called again to retrive the next row of data.
+
 
     Result Values From A Query>
     
@@ -353,7 +366,7 @@ sqlite3>
     !  the pointers returned are valid until a type conversion occurs,or until
        sqlite3_step() or sqlite3_reset() or sqlite3_finalize() is called,the
        memory space used to hold strings and BLOBs is freed automatically.
-       DO NOT pas the pointers returned from sqlite3_column_blob(), sqlite3_column_text(), etc. into sqlite3_free().
+       DO NOT pass the pointers returned from sqlite3_column_blob(), sqlite3_column_text(), etc. into sqlite3_free().
 
 
     Destroy A Prepared Statement Object>
