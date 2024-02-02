@@ -29,6 +29,8 @@ sqlite3>
 			
 		      destructor :
 		        sqlite3_finalize()
+  !  THE BLOB TYPE :
+       blob type is the data type used to save binary data into sqlite3 database.
 
   eight primary methods of sqlite3 :
     /*  sqlite3_open - open an SQLite database file with UTF-8.
@@ -188,6 +190,8 @@ sqlite3>
     int sqlite3_bind_zeroblob(sqlite3_stmt *, int, int n);
     int sqlite3_bind_zeroblob64(sqlite3_stmt *, int, sqlite3_uint64);
 
+    !  sqlite3_bind_*() returns SQLITE_OK on succeed,otherwise returns error code.
+
     #  in the SQL statement text input to sqlite3_prepare_v2() and its variants,
        literals may be replaced by a parameter that matches one of following templates :
          (literal templates)
@@ -269,6 +273,16 @@ sqlite3>
     #  the byte-order of UTF16 input text is determined by the byte-order mark(BOM,U+FEFF).
        if the mark is uncorrect or missed,SQLite might change those invalid characters into
        the unicode replacement character: U+FFFD.
+
+    !  sqlite3_bind*() function can not be used to bind "?" with invalid values like table name,
+       it can only be used to bind values with fields in the SQL statement.
+       e.g.
+         error :
+	   const char *table_name = "table_name";
+	   const char *sql_statement = "SELECT ? FROM ?";
+	   ...
+	   int ret = sqlite3_bind_text(pSqlite3_stmt, 2, table_name, -1, SQLITE_STATIC);
+	   /*  try to bind '?' with @table_name,but it is not a field of table.  */
 
       
     Evaluate An SQL Statement>
@@ -435,4 +449,26 @@ sqlite3>
     !  during sqlite3_exec() running :
          database handle must be valid and opened.
 	 @sql can not be modified or deallocated(if its granted by dynamically allocating).
+   
+    Retrive error message or error code>
+      /*  sqlite3_errmsg - retrive error message from database if any error was occurred.
+       *  @db:		 database handler.
+       *  return -	 error message pointer or "unknown error".
+       */
+      SQLITE_API const char *sqlite3_errmsg(sqlite3 *db);
+
+      /*  sqlite3_errcode - retrive error code from database if any error was occurred.
+       *  @db:		  database handler.
+       *  return -	  error code.
+       */
+      SQLITE_API int sqlite3_errcode(sqlite3 *db);
+
+    !  The generic execution path :
+         call to sqlite3_open*() to open database =>
+	 call to sqlite3_prepare*() to prepare SQL statement =>
+	 call to sqlite3_bind*() to bind parameters if needed =>
+	 call to sqlite3_step() to evaluate an SQL statement =>
+	 call to sqlite3_column*() to retrive result is needed =>
+	 call to sqlite3_finalize() to finish prepare SQL statement =>
+	 call to sqlite3_close*() to close database.
 	 
