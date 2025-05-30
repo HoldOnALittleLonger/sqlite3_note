@@ -1,34 +1,34 @@
 sqlite3>
   two primary objects of sqlite3 :
     sqlite3  ->  the database connection object,created by sqlite3_open(),
-    	     	 and destroyed by sqlite3_close().
+                 and destroyed by sqlite3_close().
 
-		         typedef struct sqlite3 sqlite3;
+                 typedef struct sqlite3 sqlite3;
 
-		         each open SQLite database is represented by a pointer to an
-		         instance of the opaque structure named "sqlite3".
+                 each open SQLite database is represented by a pointer to an
+                 instance of the opaque structure named "sqlite3".
 
-		         constructors :
-		           sqlite3_open(), sqlite3_open16(), sqlite3_open_v2()
+                 constructors :
+                   sqlite3_open(), sqlite3_open16(), sqlite3_open_v2()
 
-		         destructors :
-		           sqlite3_close(), sqlite3_close_v2()
+                 destructors :
+                   sqlite3_close(), sqlite3_close_v2()
 
     sqlite3_stmt  ->  the prepared statement object,created by sqlite3_prepare(),
-    		          and destroyed by sqlite3_finalize().
+                      and destroyed by sqlite3_finalize().
 
-		              typedef struct sqlite3_stmt sqlite3_stmt;
+                      typedef struct sqlite3_stmt sqlite3_stmt;
 
-		              an instance of this object represents a single SQL statement
-		              that has been compiled into binary form and is ready to be
-		              evaluated.
+                      an instance of this object represents a single SQL statement
+                      that has been compiled into binary form and is ready to be
+                      evaluated.
 
-		              constructors :
-		                sqlite3_prepare(), sqlite3_prepare16(), sqlite3_prepare16_v2()
-			            sqlite3_prepare16_v3(), sqlite3_prepare_v2(), sqlite3_prepare_v3()
-			
-		              destructor :
-		                sqlite3_finalize()
+                      constructors :
+                        sqlite3_prepare(), sqlite3_prepare16(), sqlite3_prepare16_v2()
+                        sqlite3_prepare16_v3(), sqlite3_prepare_v2(), sqlite3_prepare_v3()
+   
+                      destructor :
+                        sqlite3_finalize()
   !  THE BLOB TYPE :
        blob type is the data type used to save binary data into sqlite3 database.
 
@@ -40,7 +40,7 @@ sqlite3>
      *  @ppDb : the pointer points to a pointer which points to a sqlite3 object.
      *  return - SQLITE_OK or error code.
      *  #  this function will automatically allocate memory for *ppDb,if failed to
-     *	   allocating,then NULL will be written into it.
+     *     allocating,then NULL will be written into it.
      */
     int sqlite3_open(const char *filename, sqlite3 **ppDb);
 
@@ -55,31 +55,33 @@ sqlite3>
      *  @flags : at least one of the following flags must be included >
      *             SQLITE_OPEN_READONLY
      *             SQLITE_OPEN_READWRITE
-     *		       SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
-     *		       SQLITE_OPEN_URI	     /*  the filename can be interpreted as a URI  */
-     *		       SQLITE_OPEN_MEMORY	 /*  database will be opened as an in-memory database  */
-     *		   			                 /*  it is named by @filename,used for cache-sharing  */
-     *		       SQLITE_OPEN_NOMUTEX
-     *		       SQLITE_OPEN_FULLMUTEX
-     *		       SQLITE_OPEN_SHAREDCACHE
-     *		       SQLITE_OPEN_PRIVATECACHE	/*  shared cache disabled  */
-     *		       SQLITE_OPEN_EXRESCODE	/*  extended result code mode  */
-     *		       SQLITE_OPEN_NOFOLLOW		/*  @filename is not allowed to contain a symbolic link  */
+     *             SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE
+     *             
+     *             (Additional flags)
+     *             SQLITE_OPEN_URI      /*  the filename can be interpreted as a URI  */
+     *             SQLITE_OPEN_MEMORY  /*  database will be opened as an in-memory database  */
+     *                         /*  it is named by @filename,used for cache-sharing  */
+     *             SQLITE_OPEN_NOMUTEX
+     *             SQLITE_OPEN_FULLMUTEX
+     *             SQLITE_OPEN_SHAREDCACHE
+     *             SQLITE_OPEN_PRIVATECACHE /*  shared cache disabled  */
+     *             SQLITE_OPEN_EXRESCODE /*  extended result code mode  */
+     *             SQLITE_OPEN_NOFOLLOW  /*  @filename is not allowed to contain a symbolic link  */
      *  @zVfs : the name of the sqlite3_vfs object that defines the operating
-     *	      	system interface that the new database connection should use.
+     *          system interface that the new database connection should use.
      *  return - SQLITE_OK or error code.
      *  #  SQLITE_OPEN_EXCLUSIVE flag does not cause the open to fail if the 
-     *	   databse already exists,it is intended for use by the VFS interface only.
+     *     databse already exists,it is intended for use by the VFS interface only.
      *  #  if @flags is not a optionally combining from above,the behavior is undefined.
      */
     int sqlite3_open_v2(const char *filename, sqlite3 **ppDb,
-    			        int flags, const char *zVfs);
+               int flags, const char *zVfs);
 
     /*  sqlite3_close - close a database connection and destroy it.
      *  @db : pointer returned by sqlite3_open() or sqlite3_open16().
      *  return - SQLITE_OK or error code.
      *  #  if the database connection is associated with unfinalized prepared statements,
-     *	   BLOB handlers,and/or unfinished sqlite3_backup objects then sqlite3_close() will leave the database connection open and return SQLITE_BUSY.
+     *     BLOB handlers,and/or unfinished sqlite3_backup objects then sqlite3_close() will leave the database connection open and return SQLITE_BUSY.
      */
     int sqlite3_close(sqlite3 *db);
 
@@ -88,8 +90,9 @@ sqlite3>
 
     !  if an sqlite3 object is destroyed while a transaction is open,the transaction
        is automatically rolled back.
-
-    !  @db can not previously closed,call close functions with NULL is a harmless no-op.
+    !  database handler @db send to sqlite3_close*() can not previously closed,that is we cannot
+       close a sqlite3 handler more than once.
+       call close functions with NULL is a harmless no-op.
 
 
   Compiling An SQL Statement>
@@ -107,58 +110,58 @@ sqlite3>
      *  return - SQLITE_OK or error code.
      */
     int sqlite3_prepare(sqlite3 *db, const char *zSql, int nByte,
-    		            sqlite3_stmt **ppStmt, const char **pzTail);
+                  sqlite3_stmt **ppStmt, const char **pzTail);
 
     /*  sqlite3_prepare_v2 - version 2,recommended for all new programs.  */
     int sqlite3_prepare_v2(sqlite3 *db, const char *zSql, int nByte,
-    			           sqlite3_stmt **ppStmt, const char **pzTail);
+                  sqlite3_stmt **ppStmt, const char **pzTail);
 
     /*  sqlite3_prepare_v3 - version 3.
      *  @prepFlags : a bit array consisting of zero or more of the SQLITE_PREPARE_* flags.
      *               if @preFlags is zero,then this function is same to *_v2 functions.
      */
     int sqlite3_prepare_v3(sqlite3 *db, const char *zSql, int nByte,
-    			           unsigned int prepFlags, sqlite3_stmt **ppStmt,
-			               const char **pzTail);
+                  unsigned int prepFlags, sqlite3_stmt **ppStmt,
+                  const char **pzTail);
 
     /*  In the "vX" interfaces,the prepared statement that is returned contains a
         copy of the original SQL text,this causes the sqlite3_setp() interface to behave
-	    differently in 3 ways :
-	      >  if the database schema changes,instead of returning SQLITE_SCHEMA
-   	         as it always used to do,sqlite3_setp() will automatically recompile
-   	         the SQL statement and try to run it again.
-   	         as many as SQLITE_MAX_SCHEMA_RETRY retries will occur before sqlite3_step()
-   	         gives up and returns an error.
-   	      >  when an error occurs,sqlite3_step() will return one of the detailed
-   	         error codes or extended error codes.
-   	         the legacy behavior was that sqlite3_step() would only return a generic
-   	         SQLITE_ERROR result code and the application would have to make a 
-   	         second call to sqlite3_reset() in order to find the underlying cause
-   	         of the problem.with the "v2" prepare interfaces,the underlying reason
-   	         for the error is returned immediately.
-   	      >  if the specific value bound to a host parameter in the WHERE clause
-   	         might influence the choice of query plan for a statement,then the statement
-   	         will be automatically recompiled,as if there had been a schema change,
-   	         on the first sqlite3_setp() call following any change to the bindings
-   	         of that parameter.the specific value of a WHERE-clause parameter might
-   	         influence the choice of query plan if the parameter is the left-hand
-   	         side of a LIKE or GLOB operator or if the parameter is compared to
-   	         an indexed column and the SQLITE_ENABLE_STAT4 compile-time option
-   	         is enabled.
+        differently in 3 ways :
+          >  if the database schema changes,instead of returning SQLITE_SCHEMA
+             as it always used to do,sqlite3_setp() will automatically recompile
+             the SQL statement and try to run it again.
+             as many as SQLITE_MAX_SCHEMA_RETRY retries will occur before sqlite3_step()
+             gives up and returns an error.
+          >  when an error occurs,sqlite3_step() will return one of the detailed
+             error codes or extended error codes.
+             the legacy behavior was that sqlite3_step() would only return a generic
+             SQLITE_ERROR result code and the application would have to make a 
+             second call to sqlite3_reset() in order to find the underlying cause
+             of the problem.with the "v2" prepare interfaces,the underlying reason
+             for the error is returned immediately.
+          >  if the specific value bound to a host parameter in the WHERE clause
+             might influence the choice of query plan for a statement,then the statement
+             will be automatically recompiled,as if there had been a schema change,
+             on the first sqlite3_setp() call following any change to the bindings
+             of that parameter.the specific value of a WHERE-clause parameter might
+             influence the choice of query plan if the parameter is the left-hand
+             side of a LIKE or GLOB operator or if the parameter is compared to
+             an indexed column and the SQLITE_ENABLE_STAT4 compile-time option
+             is enabled.
     */
 
     /*  UTF-16 version  */
     int sqlite3_prepare16(sqlite3 *db, const void *zSql, int nByte,
-    		              sqlite3_stmt **ppStmt, const void **pzTail);
+                    sqlite3_stmt **ppStmt, const void **pzTail);
     
     /*  UTF-16 version  */
     int sqlite3_prepare16_v2(sqlite3 *db, const void *zSql, int nByte,
-    			             sqlite3_stmt **ppStmt, const void **pzTail);
+                    sqlite3_stmt **ppStmt, const void **pzTail);
 
     /*  UTF-16 version  */
     int sqlite3_prepare16_v3(sqlite3 *db, const void *zSql, int nByte,
-    		                 unsigned int prepFlags, sqlite3_stmt **ppStmt,
-			                 const void **pzTail);
+                       unsigned int prepFlags, sqlite3_stmt **ppStmt,
+                    const void **pzTail);
 
     /*  sqlite3_reset - reset a prepared statement object back to its initial state,
      *                  eady to be re-executed.
@@ -175,9 +178,9 @@ sqlite3>
   Binding Values To Prepared Statements>
 
     int sqlite3_bind_blob(sqlite3_stmt *, int, const void *, int n,
-    			          void (*)(void *));
+                 void (*)(void *));
     int sqlite3_bind_blob64(sqlite3_stmt *, int, const void *, sqlite3_unit64,
-    			            void (*)(void *));
+                   void (*)(void *));
 
     int sqlite3_bind_double(sqlite3_stmt *, int, double);
     
@@ -188,17 +191,17 @@ sqlite3>
     int sqlite3_bind_null(sqlite3_stmt *, int);
 
     int sqlite3_bind_text(sqlite3_stmt *, int, const char *, int,
-    			          void (*)(void *));
+                 void (*)(void *));
 
     int sqlite3_bind_text16(sqlite3_stmt *, int, const void *, int,
-    			            void (*)(void *));
+                   void (*)(void *));
     int sqlite3_bind_text64(sqlite3_stmt *, int, const char *, sqlite3_uint64,
-    	                    void (*)(void *), unsigned char encoding);
+                         void (*)(void *), unsigned char encoding);
 
     int sqlite3_bind_value(sqlite3_stmt *, int, const sqlite3_value *);
 
     int sqlite3_bind_pointer(sqlite3_stmt *, int, void *, const char *,
-    	                     void (*)(void*));
+                          void (*)(void*));
 
     int sqlite3_bind_zeroblob(sqlite3_stmt *, int, int n);
     int sqlite3_bind_zeroblob64(sqlite3_stmt *, int, sqlite3_uint64);
@@ -209,17 +212,17 @@ sqlite3>
        literals may be replaced by a parameter that matches one of following templates :
          (literal templates)
          ?
-	     ?NNN	/*  NNN represents an integer literal  */
-	     :VVV	/*  VVV represents an alphanumeric identifier  */
-	     @VVV
-	     $VVV
+         ?NNN /*  NNN represents an integer literal  */
+         :VVV /*  VVV represents an alphanumeric identifier  */
+         @VVV
+         $VVV
 
          the values of these parameters can be set using the sqlite3_bind_*() routines.
 
          e.g.
            INSERT INTO TABLE_NAME (field1, field2) VALUES(?1, ?2)
-	       this statment have to be prepared by sqlite3_prepare_*() as first before 
-	       parameter binding.
+           this statment have to be prepared by sqlite3_prepare_*() as first before 
+           parameter binding.
 
     1st-arg :
       always a pointer to the sqlite3_stmt object returned from sqlite3_prepare_v2() or
@@ -252,13 +255,13 @@ sqlite3>
       lifetime of the object referenced by the 3rd parameter.
       three options exist :
         1>  A destructor to dispose of the BLOB or string after SQLite has finished
-	        with it may be passed.(bind API fails,still call to destructor)
-	        (if 3rd-arg is NULL,destructor would not be called)
-	    2>  the special constant SQLITE_STATIC,may be passed to indicate that the
-	        application remains resonsible for disposing of the object.
-	    3>  the constant SQLITE_TRANSIENT,may be passed to indicate that the object
-	        is to be copied prior to the return from sqlite3_bind_*().
-	       SQLite will then manage the lifetime of its private copy.
+            with it may be passed.(bind API fails,still call to destructor)
+            (if 3rd-arg is NULL,destructor would not be called)
+        2>  the special constant SQLITE_STATIC,may be passed to indicate that the
+            application remains resonsible for disposing of the object.
+        3>  the constant SQLITE_TRANSIENT,may be passed to indicate that the object
+            is to be copied prior to the return from sqlite3_bind_*().
+            SQLite will then manage the lifetime of its private copy.
 
     6th-arg :
       6th-arg to sqlite3_bind_text64() must be one of SQLITE_UTF8,SQLITE_UTF16,
@@ -291,11 +294,11 @@ sqlite3>
        it can only be used to bind values with fields in the SQL statement.
        e.g.
          error :
-	       const char *table_name = "table_name";
-	       const char *sql_statement = "SELECT ? FROM ?";
-	       ...
-	       int ret = sqlite3_bind_text(pSqlite3_stmt, 2, table_name, -1, SQLITE_STATIC);
-	       /*  try to bind '?' with @table_name,but it is not a field of table.  */
+           const char *table_name = "table_name";
+           const char *sql_statement = "SELECT ? FROM ?";
+           ...
+           int ret = sqlite3_bind_text(pSqlite3_stmt, 2, table_name, -1, SQLITE_STATIC);
+           /*  try to bind '?' with @table_name,but it is not a field of table.  */
 
       
   Evaluate An SQL Statement>
@@ -409,9 +412,9 @@ sqlite3>
     !  this routine can be called at any point during the life cycle of prepared
        statement :
          before statement @S is ever evaluated,
-	     after one or more calls to sqlite3_reset(),
-	     or after any call to sqlite3_step() regardless of whether or not
-	     the statement has completed execution.
+         after one or more calls to sqlite3_reset(),
+         or after any call to sqlite3_step() regardless of whether or not
+         the statement has completed execution.
 
        sqlite3_finalize(NULL) => no-op
 
@@ -429,9 +432,9 @@ sqlite3>
      *  @errmsg : where the error msg to be written.
      */
     int sqlite3_exec(sqlite3 *, const char *sql,
-    	             int (*callback)(void *, int, char **, char**),
-		             void *,
-		             char **errmsg);
+                  int (*callback)(void *, int, char **, char**),
+               void *,
+               char **errmsg);
 
     !  it is a convenience wrapper around sqlite3_prepare_v2(), sqlite3_step(),
        sqlite3_finalize(),that allows an application to run multiple statements
@@ -449,10 +452,10 @@ sqlite3>
          the number of columns in the result.
        @third-arg to @callback :
          an array of pointers to strings obtained as if from sqlite3_column_text(),
-	     one for each column.
+      one for each column.
        @fourth-arg to @callback :
          an arry of pointers to strings where each entry represents the name of
-	     corresponding result column as obtained from sqlite3_column_name().
+         corresponding result column as obtained from sqlite3_column_name().
 
     !  any error was occured during evaluating,then SQL statement evaluating 
        stop,and remaind statements will be skipped.
@@ -461,27 +464,26 @@ sqlite3>
 
     !  during sqlite3_exec() running :
          database handle must be valid and opened.
-	     @sql can not be modified or deallocated(if its granted by dynamically allocating).
+         @sql can not be modified or deallocated(if its granted by dynamically allocating).
    
   Retrive error message or error code>
       /*  sqlite3_errmsg - retrive error message from database if any error was occurred.
-       *  @db:		 database handler.
-       *  return -	 error message pointer or "unknown error".
+       *  @db:   database handler.
+       *  return -  error message pointer or "unknown error".
        */
       SQLITE_API const char *sqlite3_errmsg(sqlite3 *db);
 
       /*  sqlite3_errcode - retrive error code from database if any error was occurred.
-       *  @db:		  database handler.
-       *  return -	  error code.
+       *  @db:    database handler.
+       *  return -   error code.
        */
       SQLITE_API int sqlite3_errcode(sqlite3 *db);
 
     !  The generic execution path :
          call to sqlite3_open*() to open database =>
-	     call to sqlite3_prepare*() to prepare SQL statement =>
-	     call to sqlite3_bind*() to bind parameters if needed =>
-	     call to sqlite3_step() to evaluate an SQL statement =>
-	     call to sqlite3_column*() to retrive result is needed =>
-	     call to sqlite3_finalize() to finish prepare SQL statement =>
-	     call to sqlite3_close*() to close database.
-	 
+         call to sqlite3_prepare*() to prepare SQL statement =>
+         call to sqlite3_bind*() to bind parameters if needed =>
+         call to sqlite3_step() to evaluate an SQL statement =>
+         call to sqlite3_column*() to retrive result is needed =>
+         call to sqlite3_finalize() to finish prepare SQL statement =>
+         call to sqlite3_close*() to close database.
